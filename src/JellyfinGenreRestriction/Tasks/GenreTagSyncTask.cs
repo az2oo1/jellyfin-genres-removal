@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediaBrowser.Controller.Library;
@@ -8,6 +7,7 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Model.Tasks;
 using Microsoft.Extensions.Logging;
 using Jellyfin.Data.Enums;
+using JellyfinGenreRestriction.Core;
 
 namespace JellyfinGenreRestriction.Tasks;
 
@@ -16,13 +16,13 @@ public sealed class GenreTagSyncTask : IScheduledTask
     private readonly ILibraryManager _libraryManager;
     private readonly ILogger<GenreTagSyncTask> _logger;
 
-    public string Name => "Genre Restriction: Sync Genre Tags";
+    public string Name => "Parental Control: Sync Ultimate Tags";
 
-    public string Description => "Maps configured genres to tags for parental-control based hiding.";
+    public string Description => "Scans library and applies Advanced Keyword, Genre, and Whitelist tags for parental-control hiding.";
 
     public string Category => "Library";
 
-    public string Key => "GenreRestrictionTagSync";
+    public string Key => "GenreRestrictionUltimateSync";
 
     public GenreTagSyncTask(ILibraryManager libraryManager, ILogger<GenreTagSyncTask> logger)
     {
@@ -35,11 +35,13 @@ public sealed class GenreTagSyncTask : IScheduledTask
         cancellationToken.ThrowIfCancellationRequested();
 
         var config = Plugin.Instance.Configuration;
-        var genreMap = config.GenreToTagMapList;
 
-        if (genreMap == null || genreMap.Count == 0)
+        // Fail fast if no configurations exist
+        if ((config.GenreToTagMapList == null || config.GenreToTagMapList.Count == 0) &&
+            (config.KeywordToTagMapList == null || config.KeywordToTagMapList.Count == 0) &&
+            (config.Whitelist == null || !config.Whitelist.Enabled))
         {
-            _logger.LogInformation("No genre-to-tag mappings configured. Skipping sync.");
+            _logger.LogInformation("No Parental Control mappings configured. Skipping task.");
             progress.Report(100);
             return;
         }
@@ -70,28 +72,10 @@ public sealed class GenreTagSyncTask : IScheduledTask
                 var item = _libraryManager.GetItemById(id);
                 if (item == null) continue;
 
-                bool changed = false;
-                var itemGenres = item.Genres ?? Array.Empty<string>();
-                var currentTags = item.Tags != null ? item.Tags.ToList() : new List<string>();
-
-                foreach (var genre in itemGenres)
-                {
-                    var mapEntry = genreMap.FirstOrDefault(kvp => string.Equals(kvp.Genre, genre, StringComparison.OrdinalIgnoreCase));
-                    if (mapEntry != null && !string.IsNullOrWhiteSpace(mapEntry.Tag))
-                    {
-                        var targetTag = mapEntry.Tag;
-                        if (!currentTags.Contains(targetTag, StringComparer.OrdinalIgnoreCase))
-                        {
-                            currentTags.Add(targetTag);
-                            changed = true;
-                            _logger.LogInformation("Added tag '{Tag}' to item '{ItemName}' because of genre '{Genre}'", targetTag, item.Name, genre);
-                        }
-                    }
-                }
+                bool changed = ParentalTagger.EvaluateAndTag(item, config, _logger);
 
                 if (changed)
                 {
-                    item.Tags = currentTags.ToArray();
                     await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken);
                     updated++;
                 }
@@ -105,7 +89,7 @@ public sealed class GenreTagSyncTask : IScheduledTask
             progress.Report((processed / (double)totalItems) * 100);
         }
 
-        _logger.LogInformation("Genre sync complete. Processed {Total} items. Updated {Updated} items.", totalItems, updated);
+        _logger.LogInformation("Parental Control sync complete. Processed {Total} items. Updated {Updated} items.", totalItems, updated);
         progress.Report(100);
     }
 

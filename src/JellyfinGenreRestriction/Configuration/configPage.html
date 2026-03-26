@@ -1,45 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Genre Restriction Configuration</title>
+    <title>Ultimate Parental Control Configuration</title>
 </head>
 <body>
-    <div data-role="page" class="page type-interior pluginConfigurationPage withTabs" id="genreRestrictionConfigPage">
+    <div data-role="page" class="page type-interior pluginConfigurationPage" id="genreRestrictionConfigPage">
         <div data-role="content">
             <div class="content-primary">
-                <h1>Genre Restriction Plugin</h1>
-                <p>Configure genre restrictions per user.</p>
+                <h1>Ultimate Parental Control Plugin</h1>
+                <p>Configure automated item tagging. Once items are tagged, use Jellyfin's built-in Parental Control settings per-user to block those tags.</p>
                 <form id="genreRestrictionConfigForm">
 
+                    <h2>1. Genre Blacklist</h2>
+                    <p>Automatically add tags to items matching these genres.</p>
                     <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused">Add User Restriction</label>
                         <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 1em;">
-                            <select id="userSelect" is="emby-select" class="emby-select" style="max-width: 200px;">
-                            </select>
-
-                            <input type="text" id="genreInput" class="emby-input" placeholder="e.g. Horror" style="max-width: 200px;" />
-
-                            <button type="button" id="addRestrictionBtn" is="emby-button" class="raised emby-button">
-                                <span>Add Selection</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused">Active Restrictions:</label>
-                        <div class="paperList">
-                            <ul id="userPoliciesList" style="list-style-type: none; padding: 0;">
-                            </ul>
-                        </div>
-                    </div>
-
-                    <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused">Genre to Tag Mappings</label>
-                        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 1em;">
-                            <input type="text" id="mapGenreInput" class="emby-input" placeholder="Genre (e.g. Action)" style="max-width: 200px;" />
-                            <input type="text" id="mapTagInput" class="emby-input" placeholder="Tag (e.g. RESTRICTED_ACTION)" style="max-width: 200px;" />
+                            <input type="text" id="mapGenreInput" class="emby-input" placeholder="Genre (e.g. Adult)" style="max-width: 200px;" />
+                            <input type="text" id="mapTagInput" class="emby-input" placeholder="Tag (e.g. RESTRICT_ADULT)" style="max-width: 200px;" />
                             <button type="button" id="addMappingBtn" is="emby-button" class="raised emby-button">
-                                <span>Add Mapping</span>
+                                <span>Add Genre Mapping</span>
                             </button>
                         </div>
                         <div class="paperList">
@@ -48,16 +27,55 @@
                         </div>
                     </div>
 
+                    <h2>2. Keyword Deep Scan Blacklist</h2>
+                    <p>Scans the item's Title and Overview/Description for forbidden words (case-insensitive) and adds a tag.</p>
                     <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="enableScheduledTagSync">
-                            <input type="checkbox" is="emby-checkbox" id="enableScheduledTagSync" />
-                            <span>Enable Scheduled Tag Sync</span>
-                        </label>
+                        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 1em;">
+                            <input type="text" id="mapKeywordInput" class="emby-input" placeholder="Keyword (e.g. gore)" style="max-width: 200px;" />
+                            <input type="text" id="mapKwTagInput" class="emby-input" placeholder="Tag (e.g. RESTRICT_GORE)" style="max-width: 200px;" />
+                            <button type="button" id="addKeywordMapBtn" is="emby-button" class="raised emby-button">
+                                <span>Add Keyword Mapping</span>
+                            </button>
+                        </div>
+                        <div class="paperList">
+                            <ul id="keywordMapList" style="list-style-type: none; padding: 0;">
+                            </ul>
+                        </div>
                     </div>
 
-                    <div>
-                        <button is="emby-button" type="submit" class="raised button-submit block emby-button">
-                            <span>Save</span>
+                    <h2>3. Whitelist Mode</h2>
+                    <p>If enabled, any item that does NOT match your Safe Genres or Safe Keywords will automatically receive the Restricted Tag. (A blanket ban for untrusted items)</p>
+                    <div class="inputContainer" style="background: rgba(0,0,0,0.1); padding: 15px; border-radius: 5px;">
+                        <label class="inputLabel" for="enableWhitelist">
+                            <input type="checkbox" is="emby-checkbox" id="enableWhitelist" />
+                            <span>Enable Whitelist Mode</span>
+                        </label>
+
+                        <div style="margin-top: 15px;">
+                            <label class="inputLabel">Fallback Restricted Tag</label>
+                            <input type="text" id="wlRestrictedTag" class="emby-input" placeholder="e.g. REQUIRES_APPROVAL" style="max-width: 300px;" />
+                        </div>
+
+                        <div style="margin-top: 15px; display: flex; gap: 10px; align-items: center;">
+                            <input type="text" id="wlGenreInput" class="emby-input" placeholder="Safe Genre (e.g. Kids)" style="max-width: 200px;" />
+                            <button type="button" id="addWlGenreBtn" is="emby-button" class="raised emby-button">Add Safe Genre</button>
+                        </div>
+                        <div class="paperList" style="margin-bottom: 15px;">
+                            <ul id="wlGenreList" style="list-style-type: none; padding: 0;"></ul>
+                        </div>
+
+                        <div style="margin-top: 15px; display: flex; gap: 10px; align-items: center;">
+                            <input type="text" id="wlKeywordInput" class="emby-input" placeholder="Safe Keyword (e.g. educational)" style="max-width: 200px;" />
+                            <button type="button" id="addWlKeywordBtn" is="emby-button" class="raised emby-button">Add Safe Keyword</button>
+                        </div>
+                        <div class="paperList">
+                            <ul id="wlKeywordList" style="list-style-type: none; padding: 0;"></ul>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 30px;">
+                        <button is="emby-button" type="submit" class="raised button-submit block emby-button" style="background:#52B54B; color:white;">
+                            <span>Save Configuration</span>
                         </button>
                     </div>
                 </form>
@@ -67,138 +85,121 @@
         <script type="text/javascript">
             (function() {
                 var pluginId = "0f7a2491-c50d-4b06-b601-a0e7d3db6b8e";
-                var currentPolicies = [];
                 var currentMappings = [];
-                var usersMap = {};
+                var currentKeywordMappings = [];
+                var wlSettings = {
+                    Enabled: false,
+                    SafeGenres: [],
+                    SafeKeywords: [],
+                    RestrictedTag: ""
+                };
 
-                function renderPolicies(page) {
-                    var html = '';
-                    currentPolicies.forEach(function(policy, pIndex) {
-                        var userName = usersMap[policy.UserId] || policy.UserId;
-                        policy.BlockedGenres.forEach(function(genre, gIndex) {  
-                            html += '<li style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #333;">';
-                            html += '<span><strong>' + userName + '</strong> - ' + genre + '</span>';
-                            html += '<button type="button" is="emby-button" class="emby-button" style="color:red;" onclick="window.removeGenreRestriction(' + pIndex + ', ' + gIndex + ')">Remove</button>';
-                            html += '</li>';
-                        });
-                    });
-                    if (html === '') {
-                        html = '<li>No restrictions configured.</li>';
-                    }
-                    $('#userPoliciesList', page).html(html);
-                }
-
-                function renderMappings(page) {
+                function renderMappings() {
                     var html = '';
                     currentMappings.forEach(function(mapping, index) {
-                        html += '<li style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #333;">';
+                        html += '<li style="display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #333;">';
                         html += '<span><strong>' + mapping.Genre + '</strong> => ' + mapping.Tag + '</span>';
-                        html += '<button type="button" is="emby-button" class="emby-button" style="color:red;" onclick="window.removeGenreMapping(' + index + ')">Remove</button>';
+                        html += '<button type="button" is="emby-button" class="emby-button" style="color:red;" onclick="window.removeGenreMap(' + index + ')">Remove</button>';
                         html += '</li>';
                     });
-                    if (html === '') {
-                        html = '<li>No mappings configured.</li>';
-                    }
-                    $('#genreMapList', page).html(html);
+                    if (html === '') html = '<li>None</li>';
+                    $('#genreMapList', $('#genreRestrictionConfigPage')).html(html);
                 }
 
-                window.removeGenreRestriction = function(pIndex, gIndex) {      
-                    if (currentPolicies[pIndex]) {
-                        currentPolicies[pIndex].BlockedGenres.splice(gIndex, 1);
-                        if (currentPolicies[pIndex].BlockedGenres.length === 0) {
-                            currentPolicies.splice(pIndex, 1);
-                        }
-                        var page = $('#genreRestrictionConfigPage');
-                        renderPolicies(page);
-                    }
-                };
+                function renderKeywordMappings() {
+                    var html = '';
+                    currentKeywordMappings.forEach(function(mapping, index) {
+                        html += '<li style="display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #333;">';
+                        html += '<span><strong>"' + mapping.Keyword + '"</strong> => ' + mapping.Tag + '</span>';
+                        html += '<button type="button" is="emby-button" class="emby-button" style="color:red;" onclick="window.removeKeywordMap(' + index + ')">Remove</button>';
+                        html += '</li>';
+                    });
+                    if (html === '') html = '<li>None</li>';
+                    $('#keywordMapList', $('#genreRestrictionConfigPage')).html(html);
+                }
 
-                window.removeGenreMapping = function(index) {
-                    if (currentMappings[index]) {
-                        currentMappings.splice(index, 1);
-                        var page = $('#genreRestrictionConfigPage');
-                        renderMappings(page);
-                    }
-                };
+                function renderWhitelist() {
+                    var gHtml = '';
+                    wlSettings.SafeGenres.forEach(function(g, index) {
+                        gHtml += '<li style="display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #333;">';
+                        gHtml += '<span>' + g + '</span>';
+                        gHtml += '<button type="button" is="emby-button" class="emby-button" style="color:red;" onclick="window.removeWlGenre(' + index + ')">Remove</button>';
+                        gHtml += '</li>';
+                    });
+                    if (gHtml === '') gHtml = '<li>None</li>';
+                    $('#wlGenreList', $('#genreRestrictionConfigPage')).html(gHtml);
+
+                    var kHtml = '';
+                    wlSettings.SafeKeywords.forEach(function(k, index) {
+                        kHtml += '<li style="display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #333;">';
+                        kHtml += '<span>"' + k + '"</span>';
+                        kHtml += '<button type="button" is="emby-button" class="emby-button" style="color:red;" onclick="window.removeWlKeyword(' + index + ')">Remove</button>';
+                        kHtml += '</li>';
+                    });
+                    if (kHtml === '') kHtml = '<li>None</li>';
+                    $('#wlKeywordList', $('#genreRestrictionConfigPage')).html(kHtml);
+                }
+
+                window.removeGenreMap = function(index) { currentMappings.splice(index, 1); renderMappings(); };
+                window.removeKeywordMap = function(index) { currentKeywordMappings.splice(index, 1); renderKeywordMappings(); };
+                window.removeWlGenre = function(index) { wlSettings.SafeGenres.splice(index, 1); renderWhitelist(); };
+                window.removeWlKeyword = function(index) { wlSettings.SafeKeywords.splice(index, 1); renderWhitelist(); };
 
                 $('#genreRestrictionConfigPage').on('pageshow', function () {   
                     var page = this;
                     Dashboard.showLoadingMsg();
+                    ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                        currentMappings = config.GenreToTagMapList || [];   
+                        currentKeywordMappings = config.KeywordToTagMapList || [];
+                        wlSettings = config.Whitelist || { Enabled: false, SafeGenres: [], SafeKeywords: [], RestrictedTag: "" };
+                        
+                        $('#enableWhitelist', page).prop('checked', wlSettings.Enabled);
+                        $('#wlRestrictedTag', page).val(wlSettings.RestrictedTag || '');
 
-                    ApiClient.getUsers().then(function(users) {
-                        var selectHtml = '';
-                        users.forEach(function(u) {
-                            usersMap[u.Id] = u.Name;
-                            selectHtml += '<option value="' + u.Id + '">' + u.Name + '</option>';
-                        });
-                        $('#userSelect', page).html(selectHtml);
+                        renderMappings();
+                        renderKeywordMappings();
+                        renderWhitelist();
 
-                        ApiClient.getPluginConfiguration(pluginId).then(function (config) {
-                            currentPolicies = config.UserPolicies || [];        
-                            renderPolicies(page);
-
-                            currentMappings = config.GenreToTagMapList || [];
-                            renderMappings(page);
-
-                            $('#enableScheduledTagSync', page).prop('checked', config.EnableScheduledTagSync || false);
-
-                            Dashboard.hideLoadingMsg();
-                        }).catch(function(err) {
-                            console.error(err);
-                            Dashboard.hideLoadingMsg();
-                        });
-                    }).catch(function(err) {
-                        console.error(err);
                         Dashboard.hideLoadingMsg();
                     });
                 });
 
-                $('#addRestrictionBtn').on('click', function(e) {
-                    e.preventDefault();
-                    var page = $(this).parents('#genreRestrictionConfigPage');  
-                    var userId = $('#userSelect', page).val();
-                    var genre = $('#genreInput', page).val().trim();
-
-                    if (!userId || !genre) {
-                        alert("Please select a user and enter a genre.");       
-                        return;
+                $('#addMappingBtn').on('click', function(e) {
+                    var genre = $('#mapGenreInput').val().trim();
+                    var tag = $('#mapTagInput').val().trim();
+                    if (genre && tag) {
+                        currentMappings.push({ Genre: genre, Tag: tag });       
+                        $('#mapGenreInput').val(''); $('#mapTagInput').val('');
+                        renderMappings();
                     }
-
-                    var policy = currentPolicies.find(function(p) { return p.UserId === userId; });
-                    if (!policy) {
-                        policy = { UserId: userId, BlockedGenres: [] };
-                        currentPolicies.push(policy);
-                    }
-
-                    if (policy.BlockedGenres.indexOf(genre) === -1) {
-                        policy.BlockedGenres.push(genre);
-                    }
-
-                    $('#genreInput', page).val('');
-                    renderPolicies(page);
                 });
 
-                $('#addMappingBtn').on('click', function(e) {
-                    e.preventDefault();
-                    var page = $(this).parents('#genreRestrictionConfigPage');  
-                    var genre = $('#mapGenreInput', page).val().trim();
-                    var tag = $('#mapTagInput', page).val().trim();
-
-                    if (!genre || !tag) {
-                        alert("Please enter a genre and a mapping tag.");       
-                        return;
+                $('#addKeywordMapBtn').on('click', function(e) {
+                    var keyword = $('#mapKeywordInput').val().trim();
+                    var tag = $('#mapKwTagInput').val().trim();
+                    if (keyword && tag) {
+                        currentKeywordMappings.push({ Keyword: keyword, Tag: tag });       
+                        $('#mapKeywordInput').val(''); $('#mapKwTagInput').val('');
+                        renderKeywordMappings();
                     }
+                });
 
-                    var mapping = currentMappings.find(function(m) { return m.Genre.toLowerCase() === genre.toLowerCase(); });
-                    if (!mapping) {
-                        currentMappings.push({ Genre: genre, Tag: tag });
-                    } else {
-                        mapping.Tag = tag;
+                $('#addWlGenreBtn').on('click', function(e) {
+                    var g = $('#wlGenreInput').val().trim();
+                    if (g && wlSettings.SafeGenres.indexOf(g) === -1) {
+                        wlSettings.SafeGenres.push(g);
+                        $('#wlGenreInput').val('');
+                        renderWhitelist();
                     }
+                });
 
-                    $('#mapGenreInput', page).val('');
-                    $('#mapTagInput', page).val('');
-                    renderMappings(page);
+                $('#addWlKeywordBtn').on('click', function(e) {
+                    var k = $('#wlKeywordInput').val().trim();
+                    if (k && wlSettings.SafeKeywords.indexOf(k) === -1) {
+                        wlSettings.SafeKeywords.push(k);
+                        $('#wlKeywordInput').val('');
+                        renderWhitelist();
+                    }
                 });
 
                 $('#genreRestrictionConfigForm').on('submit', function (e) {    
@@ -207,9 +208,12 @@
                     Dashboard.showLoadingMsg();
 
                     ApiClient.getPluginConfiguration(pluginId).then(function (config) {
-                        config.UserPolicies = currentPolicies;
                         config.GenreToTagMapList = currentMappings;
-                        config.EnableScheduledTagSync = $('#enableScheduledTagSync', page).prop('checked');
+                        config.KeywordToTagMapList = currentKeywordMappings;
+                        
+                        wlSettings.Enabled = $('#enableWhitelist', page).prop('checked');
+                        wlSettings.RestrictedTag = $('#wlRestrictedTag', page).val().trim();
+                        config.Whitelist = wlSettings;
 
                         ApiClient.updatePluginConfiguration(pluginId, config).then(function (result) {
                             Dashboard.processPluginConfigurationUpdateResult(result);

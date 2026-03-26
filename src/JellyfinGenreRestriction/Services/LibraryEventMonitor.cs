@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
@@ -7,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Entities;
 using Jellyfin.Data.Enums;
-using System.Collections.Generic;
+using JellyfinGenreRestriction.Core;
 
 namespace JellyfinGenreRestriction.Services;
 
@@ -26,7 +25,7 @@ public class LibraryEventMonitor : IHostedService, IDisposable
     {
         _libraryManager.ItemAdded += OnItemAdded;
         _libraryManager.ItemUpdated += OnItemUpdated;
-        _logger.LogInformation("Library Event Monitor started for real-time genre-tag sync.");
+        _logger.LogInformation("Library Event Monitor started for real-time Ultimate Parental Control tagging.");
         return Task.CompletedTask;
     }
 
@@ -56,34 +55,12 @@ public class LibraryEventMonitor : IHostedService, IDisposable
         if (updateReason == ItemUpdateType.MetadataEdit) return;
 
         var config = Plugin.Instance.Configuration;
-        var genreMap = config.GenreToTagMapList;
 
-        if (genreMap == null || genreMap.Count == 0) return;
+        bool changed = ParentalTagger.EvaluateAndTag(item, config, _logger);
 
-        bool changed = false;
-        var itemGenres = item.Genres ?? Array.Empty<string>();
-        var currentTags = item.Tags != null ? item.Tags.ToList() : new List<string>();
-
-        foreach (var genre in itemGenres)
-        {
-            var mapEntry = genreMap.FirstOrDefault(kvp => string.Equals(kvp.Genre, genre, StringComparison.OrdinalIgnoreCase));
-            if (mapEntry != null && !string.IsNullOrWhiteSpace(mapEntry.Tag))
-            {
-                var targetTag = mapEntry.Tag;
-                if (!currentTags.Contains(targetTag, StringComparer.OrdinalIgnoreCase))
-                {
-                    currentTags.Add(targetTag);
-                    changed = true;
-                    _logger.LogInformation("Real-time: Added tag '{Tag}' to item '{ItemName}' because of genre '{Genre}'", targetTag, item.Name, genre);
-                }
-            }
-        }
-
+        // Fire-and-forget sync saving
         if (changed)
         {
-            item.Tags = currentTags.ToArray();
-            
-            // Fire-and-forget sync saving to prevent event handler blocking
             _ = Task.Run(async () =>
             {
                 try
@@ -92,7 +69,7 @@ public class LibraryEventMonitor : IHostedService, IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to update item {ItemName} after adding genre restriction tag.", item.Name);
+                    _logger.LogError(ex, "Failed to update item {ItemName} after adding Parental Control tag.", item.Name);
                 }
             });
         }
