@@ -44,14 +44,14 @@ public sealed class GenreTagSyncTask : IScheduledTask
             return;
         }
 
-        var items = _libraryManager.GetItemList(new InternalItemsQuery
+        var itemIds = _libraryManager.GetItemIds(new InternalItemsQuery
         {
             IncludeItemTypes = new[] { BaseItemKind.Movie, BaseItemKind.Series, BaseItemKind.Episode, BaseItemKind.Audio, BaseItemKind.MusicVideo, BaseItemKind.Video, BaseItemKind.AudioBook, BaseItemKind.Book },
             IsFolder = false,
             Recursive = true
         });
 
-        int totalItems = items.Count;
+        int totalItems = itemIds.Count;
         if (totalItems == 0)
         {
             progress.Report(100);
@@ -61,34 +61,44 @@ public sealed class GenreTagSyncTask : IScheduledTask
         int processed = 0;
         int updated = 0;
 
-        foreach (var item in items)
+        foreach (var id in itemIds)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            bool changed = false;
-            var itemGenres = item.Genres ?? Array.Empty<string>();
-            var currentTags = item.Tags != null ? item.Tags.ToList() : new List<string>();
-
-            foreach (var genre in itemGenres)
+            try
             {
-                var mapEntry = genreMap.FirstOrDefault(kvp => string.Equals(kvp.Genre, genre, StringComparison.OrdinalIgnoreCase));
-                if (mapEntry != null && !string.IsNullOrWhiteSpace(mapEntry.Tag))
+                var item = _libraryManager.GetItemById(id);
+                if (item == null) continue;
+
+                bool changed = false;
+                var itemGenres = item.Genres ?? Array.Empty<string>();
+                var currentTags = item.Tags != null ? item.Tags.ToList() : new List<string>();
+
+                foreach (var genre in itemGenres)
                 {
-                    var targetTag = mapEntry.Tag;
-                    if (!currentTags.Contains(targetTag, StringComparer.OrdinalIgnoreCase))
+                    var mapEntry = genreMap.FirstOrDefault(kvp => string.Equals(kvp.Genre, genre, StringComparison.OrdinalIgnoreCase));
+                    if (mapEntry != null && !string.IsNullOrWhiteSpace(mapEntry.Tag))
                     {
-                        currentTags.Add(targetTag);
-                        changed = true;
-                        _logger.LogInformation("Added tag '{Tag}' to item '{ItemName}' because of genre '{Genre}'", targetTag, item.Name, genre);
+                        var targetTag = mapEntry.Tag;
+                        if (!currentTags.Contains(targetTag, StringComparer.OrdinalIgnoreCase))
+                        {
+                            currentTags.Add(targetTag);
+                            changed = true;
+                            _logger.LogInformation("Added tag '{Tag}' to item '{ItemName}' because of genre '{Genre}'", targetTag, item.Name, genre);
+                        }
                     }
                 }
-            }
 
-            if (changed)
+                if (changed)
+                {
+                    item.Tags = currentTags.ToArray();
+                    await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken);
+                    updated++;
+                }
+            }
+            catch (Exception ex)
             {
-                item.Tags = currentTags.ToArray();
-                await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken);
-                updated++;
+                _logger.LogWarning(ex, "Failed to load or process item {Id}", id);
             }
 
             processed++;
