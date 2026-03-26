@@ -1,4 +1,5 @@
-﻿{
+﻿[
+{
     "guid":  "0f7a2491-c50d-4b06-b601-a0e7d3db6b8e",
     "name":  "Genre Restriction",
     "description":  "Per-user genre-based restriction plugin scaffold for Jellyfin 10.11.6.",
@@ -22,3 +23,4 @@
                      }
                  ]
 }
+]
