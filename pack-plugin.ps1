@@ -51,11 +51,10 @@ if ($UpdateManifest) {
 
     $entry.versions[0].version = $Version
     $entry.versions[0].checksum = $hash
-    $entry.versions[0].downloads[0].size = $size
     $entry.versions[0].timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
 
     if (-not [string]::IsNullOrWhiteSpace($DownloadUrl)) {
-        $entry.versions[0].downloads[0].url = $DownloadUrl
+        $entry.versions[0].sourceUrl = $DownloadUrl
     }
 
     $json = $manifest | ConvertTo-Json -Depth 12
@@ -69,15 +68,14 @@ Write-Host "SIZE: $size"
 Write-Host "Version: $Version"
 
 if (-not $UpdateManifest) {
-    Write-Host "Update dist/manifest.json -> versions[0].checksum and downloads[0].size"
-    Write-Host "Update dist/manifest.json -> downloads[0].url with your hosted ZIP URL"
+    Write-Host "Update dist/manifest.json -> versions[0].checksum"
+    Write-Host "Update dist/manifest.json -> versions[0].sourceUrl with your hosted ZIP URL"
 }
 
 if (Test-Path $manifestPath) {
     Write-Host "Manifest template exists at: $manifestPath"
-    $manifestValidation = Get-Content $manifestPath -Raw | ConvertFrom-Json
+    $manifestValidation = Get-Content $manifestPath -Raw | ConvertFrom-Json     
     $m = $manifestValidation[0].versions[0]
-    if ($m.checksum -eq "REPLACE_WITH_SHA256" -or $m.downloads[0].size -eq 0 -or $m.downloads[0].url -like "https://YOUR_HOST/*") {
-        Write-Warning "Manifest still contains placeholders. Jellyfin installs can fail or disappear after restart until manifest fields are real values."
-    }
+    if ($m.checksum -eq "REPLACE_WITH_SHA256" -or $m.sourceUrl -like "https://YOUR_HOST/*" -or $m.sourceUrl -like "https://github.com*") {
+        Write-Warning "Manifest might still contain placeholders or non-zip URLs. Make sure sourceUrl points to the exact .zip file."      
 }
