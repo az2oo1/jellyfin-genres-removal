@@ -1,13 +1,20 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using MediaBrowser.Controller.Library;
+using MediaBrowser.Controller.Entities;
 using MediaBrowser.Model.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace JellyfinGenreRestriction.Tasks;
 
 public sealed class GenreTagSyncTask : IScheduledTask
 {
+    private readonly ILibraryManager _libraryManager;
+    private readonly ILogger<GenreTagSyncTask> _logger;
+
     public string Name => "Genre Restriction: Sync Genre Tags";
 
     public string Description => "Maps configured genres to tags for parental-control based hiding.";
@@ -16,11 +23,77 @@ public sealed class GenreTagSyncTask : IScheduledTask
 
     public string Key => "GenreRestrictionTagSync";
 
+    public GenreTagSyncTask(ILibraryManager libraryManager, ILogger<GenreTagSyncTask> logger)
+    {
+        _libraryManager = libraryManager;
+        _logger = logger;
+    }
+
     public async Task ExecuteAsync(IProgress<double> progress, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        await Task.CompletedTask;
 
+        var config = Plugin.Instance.Configuration;
+        var genreMap = config.GenreToTagMap;
+
+        if (genreMap == null || genreMap.Count == 0)
+        {
+            _logger.LogInformation("No genre-to-tag mappings configured. Skipping sync.");
+            progress.Report(100);
+            return;
+        }
+
+        var items = _libraryManager.GetItemList(new InternalItemsQuery
+        {
+            IsFolder = false,
+            Recursive = true
+        });
+
+        int totalItems = items.Count;
+        if (totalItems == 0)
+        {
+            progress.Report(100);
+            return;
+        }
+
+        int processed = 0;
+        int updated = 0;
+
+        foreach (var item in items)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            bool changed = false;
+            var itemGenres = item.Genres ?? Array.Empty<string>();
+            var currentTags = item.Tags != null ? item.Tags.ToList() : new List<string>();
+
+            foreach (var genre in itemGenres)
+            {
+                var mapEntry = genreMap.FirstOrDefault(kvp => string.Equals(kvp.Key, genre, StringComparison.OrdinalIgnoreCase));
+                if (mapEntry.Key != null && !string.IsNullOrWhiteSpace(mapEntry.Value))
+                {
+                    var targetTag = mapEntry.Value;
+                    if (!currentTags.Contains(targetTag, StringComparer.OrdinalIgnoreCase))
+                    {
+                        currentTags.Add(targetTag);
+                        changed = true;
+                        _logger.LogInformation("Added tag '{Tag}' to item '{ItemName}' because of genre '{Genre}'", targetTag, item.Name, genre);
+                    }
+                }
+            }
+
+            if (changed)
+            {
+                item.Tags = currentTags.ToArray();
+                await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, cancellationToken);
+                updated++;
+            }
+
+            processed++;
+            progress.Report((processed / (double)totalItems) * 100);
+        }
+
+        _logger.LogInformation("Genre sync complete. Processed {Total} items. Updated {Updated} items.", totalItems, updated);
         progress.Report(100);
     }
 

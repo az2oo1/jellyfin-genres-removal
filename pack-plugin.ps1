@@ -32,6 +32,8 @@ if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
 Compress-Archive -Path (Join-Path $stageDir "*") -DestinationPath $zipPath
 
 $hash = (Get-FileHash $zipPath -Algorithm MD5).Hash.ToLower()
+
+if ($UpdateManifest) {
     if (-not (Test-Path $manifestPath)) {
         throw "Manifest file not found: $manifestPath"
     }
@@ -54,7 +56,7 @@ $hash = (Get-FileHash $zipPath -Algorithm MD5).Hash.ToLower()
         $entry.versions[0].sourceUrl = $DownloadUrl
     }
 
-    $json = $manifest | ConvertTo-Json -Depth 12
+    $json = "[$($manifest | ConvertTo-Json -Depth 12)]"
     Set-Content -Path $manifestPath -Value $json -Encoding UTF8
     Write-Host "Manifest updated: $manifestPath"
 }
@@ -73,6 +75,7 @@ if (Test-Path $manifestPath) {
     Write-Host "Manifest template exists at: $manifestPath"
     $manifestValidation = Get-Content $manifestPath -Raw | ConvertFrom-Json     
     $m = $manifestValidation[0].versions[0]
-    if ($m.checksum -eq "REPLACE_WITH_MD5" -or $m.sourceUrl -like "https://YOUR_HOST/*" -or $m.sourceUrl -like "https://github.com*") {
+    if ($m.checksum -eq "REPLACE_WITH_MD5" -or $m.sourceUrl -like "https://YOUR_HOST/*") {
         Write-Warning "Manifest might still contain placeholders or non-zip URLs. Make sure sourceUrl points to the exact .zip file."
     }
+}
