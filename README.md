@@ -61,6 +61,12 @@ Copy the build output DLLs to one of these paths and restart Jellyfin:
 ./pack-plugin.ps1
 ```
 
+Or auto-update manifest with hash/size/version in one step:
+
+```powershell
+./pack-plugin.ps1 -UpdateManifest -Version 0.1.0.0 -DownloadUrl "https://YOUR_HOST/releases/JellyfinGenreRestriction_0.1.0.0.zip"
+```
+
 2. Open `dist/manifest.json` and update:
 - `versions[0].checksum` with printed SHA256.
 - `versions[0].downloads[0].size` with printed size.
@@ -70,4 +76,8 @@ Copy the build output DLLs to one of these paths and restart Jellyfin:
 - `dist/manifest.json` at a public direct URL.
 - The ZIP file at the URL referenced inside manifest `downloads[0].url`.
 
-4. In Jellyfin: `Dashboard -> Plugins -> Repositories -> +`(https://raw.githubusercontent.com/az2oo1/jellyfin-genres-removal/main/dist/manifest.json).
+4. In Jellyfin: `Dashboard -> Plugins -> Repositories -> +` and paste:
+
+```text
+https://raw.githubusercontent.com/az2oo1/jellyfin-genres-removal/main/dist/manifest.json
+```

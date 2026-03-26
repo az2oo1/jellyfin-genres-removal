@@ -1,6 +1,8 @@
 param(
     [string]$Configuration = "Release",
-    [string]$Version = "0.1.0.0"
+    [string]$Version = "0.1.0.0",
+    [string]$DownloadUrl = "",
+    [switch]$UpdateManifest
 )
 
 $ErrorActionPreference = "Stop"
@@ -32,12 +34,50 @@ Compress-Archive -Path (Join-Path $stageDir "*") -DestinationPath $zipPath
 $hash = (Get-FileHash $zipPath -Algorithm SHA256).Hash.ToLower()
 $size = (Get-Item $zipPath).Length
 
+if ($UpdateManifest) {
+    if (-not (Test-Path $manifestPath)) {
+        throw "Manifest file not found: $manifestPath"
+    }
+
+    $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
+    if (-not $manifest -or $manifest.Count -eq 0) {
+        throw "Manifest does not contain plugin entries."
+    }
+
+    $entry = $manifest[0]
+    if (-not $entry.versions -or $entry.versions.Count -eq 0) {
+        throw "Manifest does not contain versions entries."
+    }
+
+    $entry.versions[0].version = $Version
+    $entry.versions[0].checksum = $hash
+    $entry.versions[0].downloads[0].size = $size
+    $entry.versions[0].timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+
+    if (-not [string]::IsNullOrWhiteSpace($DownloadUrl)) {
+        $entry.versions[0].downloads[0].url = $DownloadUrl
+    }
+
+    $json = $manifest | ConvertTo-Json -Depth 12
+    Set-Content -Path $manifestPath -Value $json -Encoding UTF8
+    Write-Host "Manifest updated: $manifestPath"
+}
+
 Write-Host "ZIP: $zipPath"
 Write-Host "SHA256: $hash"
 Write-Host "SIZE: $size"
-Write-Host "Update dist/manifest.json -> versions[0].checksum and downloads[0].size"
-Write-Host "Update dist/manifest.json -> downloads[0].url with your hosted ZIP URL"
+Write-Host "Version: $Version"
+
+if (-not $UpdateManifest) {
+    Write-Host "Update dist/manifest.json -> versions[0].checksum and downloads[0].size"
+    Write-Host "Update dist/manifest.json -> downloads[0].url with your hosted ZIP URL"
+}
 
 if (Test-Path $manifestPath) {
     Write-Host "Manifest template exists at: $manifestPath"
+    $manifestValidation = Get-Content $manifestPath -Raw | ConvertFrom-Json
+    $m = $manifestValidation[0].versions[0]
+    if ($m.checksum -eq "REPLACE_WITH_SHA256" -or $m.downloads[0].size -eq 0 -or $m.downloads[0].url -like "https://YOUR_HOST/*") {
+        Write-Warning "Manifest still contains placeholders. Jellyfin installs can fail or disappear after restart until manifest fields are real values."
+    }
 }
