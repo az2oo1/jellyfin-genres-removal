@@ -3,8 +3,8 @@
     "name":  "Genre Restriction",
     "description":  "Per-user genre-based restriction plugin scaffold for Jellyfin 10.11.6.",
     "overview":  "Adds infrastructure for per-user genre restriction policies.",
-    "owner":  "abdul",
-    "category":  "General",
+    "owner":  "INTERSTELLAR",
+    "category":  "General",S
     "versions":  [
                      {
                          "version":  "0.4.0.0",
