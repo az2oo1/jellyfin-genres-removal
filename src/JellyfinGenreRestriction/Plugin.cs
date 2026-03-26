@@ -23,6 +23,14 @@ public sealed class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
 
     public IEnumerable<PluginPageInfo> GetPages()
     {
-        return Array.Empty<PluginPageInfo>();
+        return new[]
+        {
+            new PluginPageInfo
+            {
+                Name = "GenreRestrictionConfig",
+                EmbeddedResourcePath = string.Format("{0}.Configuration.configPage.html", GetType().Namespace),
+                EnableInMainMenu = true
+            }
+        };
     }
 }
