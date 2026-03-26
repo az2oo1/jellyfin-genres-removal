@@ -27,9 +27,8 @@ public sealed class Plugin : BasePlugin<PluginConfiguration>, IHasWebPages
         {
             new PluginPageInfo
             {
-                Name = "GenreRestrictionConfig",
-                EmbeddedResourcePath = string.Format("{0}.Configuration.configPage.html", GetType().Namespace),
-                EnableInMainMenu = true
+                Name = this.Name,
+                EmbeddedResourcePath = string.Format("{0}.Configuration.configPage.html", GetType().Namespace)
             }
         };
     }

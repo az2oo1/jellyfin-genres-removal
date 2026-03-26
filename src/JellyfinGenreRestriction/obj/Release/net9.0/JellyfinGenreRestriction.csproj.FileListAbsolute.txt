@@ -9,3 +9,5 @@ C:\Users\abdul\Documents\GitHub\jellyfin-genres-removal\src\JellyfinGenreRestric
 C:\Users\abdul\Documents\GitHub\jellyfin-genres-removal\src\JellyfinGenreRestriction\obj\Release\net9.0\refint\JellyfinGenreRestriction.dll
 C:\Users\abdul\Documents\GitHub\jellyfin-genres-removal\src\JellyfinGenreRestriction\obj\Release\net9.0\JellyfinGenreRestriction.pdb
 C:\Users\abdul\Documents\GitHub\jellyfin-genres-removal\src\JellyfinGenreRestriction\obj\Release\net9.0\ref\JellyfinGenreRestriction.dll
+C:\Users\abdul\Documents\GitHub\jellyfin-genres-removal\src\JellyfinGenreRestriction\obj\Release\net9.0\JellyfinGenreRestriction.AssemblyInfoInputs.cache
+C:\Users\abdul\Documents\GitHub\jellyfin-genres-removal\src\JellyfinGenreRestriction\obj\Release\net9.0\JellyfinGenreRestriction.AssemblyInfo.cs

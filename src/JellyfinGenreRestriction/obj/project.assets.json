@@ -1602,7 +1602,7 @@
     "C:\\Users\\abdul\\.nuget\\packages\\": {}
   },
   "project": {
-    "version": "1.0.0",
+    "version": "0.2.0.1",
     "restore": {
       "projectUniqueName": "C:\\Users\\abdul\\Documents\\GitHub\\jellyfin-genres-removal\\src\\JellyfinGenreRestriction\\JellyfinGenreRestriction.csproj",
       "projectName": "JellyfinGenreRestriction",
