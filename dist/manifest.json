@@ -1,0 +1,26 @@
+[
+  {
+    "guid": "0f7a2491-c50d-4b06-b601-a0e7d3db6b8e",
+    "name": "Genre Restriction",
+    "description": "Per-user genre-based restriction plugin scaffold for Jellyfin 10.11.6.",
+    "overview": "Adds infrastructure for per-user genre restriction policies.",
+    "owner": "abdul",
+    "category": "General",
+    "versions": [
+      {
+        "version": "0.1.0.0",
+        "changelog": "Initial release.",
+        "targetAbi": "10.11.0.0",
+        "sourceUrl": "https://github.com/abdul/jellyfin-genres-removal",
+        "checksum": "REPLACE_WITH_SHA256",
+        "timestamp": "2026-03-26T00:00:00Z",
+        "downloads": [
+          {
+            "url": "https://YOUR_HOST/releases/JellyfinGenreRestriction_0.1.0.0.zip",
+            "size": 0
+          }
+        ]
+      }
+    ]
+  }
+]

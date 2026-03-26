@@ -1,0 +1,11 @@
+C:\Users\abdul\Documents\GitHub\jellyfin-genres-removal\src\JellyfinGenreRestriction\obj\Release\net9.0\JellyfinGenreRestriction.csproj.AssemblyReference.cache
+C:\Users\abdul\Documents\GitHub\jellyfin-genres-removal\src\JellyfinGenreRestriction\obj\Release\net9.0\JellyfinGenreRestriction.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\abdul\Documents\GitHub\jellyfin-genres-removal\src\JellyfinGenreRestriction\obj\Release\net9.0\JellyfinGenreRestriction.csproj.CoreCompileInputs.cache
+C:\Users\abdul\Documents\GitHub\jellyfin-genres-removal\src\JellyfinGenreRestriction\obj\Release\net9.0\JellyfinGenreRestriction.sourcelink.json
+C:\Users\abdul\Documents\GitHub\jellyfin-genres-removal\src\JellyfinGenreRestriction\bin\Release\net9.0\JellyfinGenreRestriction.deps.json
+C:\Users\abdul\Documents\GitHub\jellyfin-genres-removal\src\JellyfinGenreRestriction\bin\Release\net9.0\JellyfinGenreRestriction.dll
+C:\Users\abdul\Documents\GitHub\jellyfin-genres-removal\src\JellyfinGenreRestriction\bin\Release\net9.0\JellyfinGenreRestriction.pdb
+C:\Users\abdul\Documents\GitHub\jellyfin-genres-removal\src\JellyfinGenreRestriction\obj\Release\net9.0\JellyfinGenreRestriction.dll
+C:\Users\abdul\Documents\GitHub\jellyfin-genres-removal\src\JellyfinGenreRestriction\obj\Release\net9.0\refint\JellyfinGenreRestriction.dll
+C:\Users\abdul\Documents\GitHub\jellyfin-genres-removal\src\JellyfinGenreRestriction\obj\Release\net9.0\JellyfinGenreRestriction.pdb
+C:\Users\abdul\Documents\GitHub\jellyfin-genres-removal\src\JellyfinGenreRestriction\obj\Release\net9.0\ref\JellyfinGenreRestriction.dll
