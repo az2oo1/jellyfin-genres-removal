@@ -17,9 +17,7 @@
                             <select id="userSelect" is="emby-select" class="emby-select" style="max-width: 200px;">
                             </select>
 
-                            <select id="genreSelect" is="emby-select" class="emby-select" style="max-width: 200px;">
-                                <option value="" disabled selected>Loading genres...</option>
-                            </select>
+                            <input type="text" id="genreInput" class="emby-input" placeholder="e.g. Horror" style="max-width: 200px;" />
 
                             <button type="button" id="addRestrictionBtn" is="emby-button" class="raised emby-button">
                                 <span>Add Selection</span>
@@ -38,10 +36,8 @@
                     <div class="inputContainer">
                         <label class="inputLabel inputLabelUnfocused">Genre to Tag Mappings</label>
                         <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 1em;">
-                            <select id="mapGenreSelect" is="emby-select" class="emby-select" style="max-width: 200px;">
-                                <option value="" disabled selected>Loading genres...</option>
-                            </select>
-                            <input type="text" id="mapTagInput" class="emby-input" placeholder="e.g. RESTRICTED_HORROR" style="max-width: 200px;" />
+                            <input type="text" id="mapGenreInput" class="emby-input" placeholder="Genre (e.g. Action)" style="max-width: 200px;" />
+                            <input type="text" id="mapTagInput" class="emby-input" placeholder="Tag (e.g. RESTRICTED_ACTION)" style="max-width: 200px;" />
                             <button type="button" id="addMappingBtn" is="emby-button" class="raised emby-button">
                                 <span>Add Mapping</span>
                             </button>
@@ -129,35 +125,31 @@
                     var page = this;
                     Dashboard.showLoadingMsg();
 
-                    ApiClient.getGenres().then(function(result) {
-                        var genres = result.Items || [];
-                        var gHtml = '<option value="" disabled selected>Select a genre</option>';
-                        genres.forEach(function(g) {
-                            gHtml += '<option value="' + g.Name + '">' + g.Name + '</option>';
+                    ApiClient.getUsers().then(function(users) {
+                        var selectHtml = '';
+                        users.forEach(function(u) {
+                            usersMap[u.Id] = u.Name;
+                            selectHtml += '<option value="' + u.Id + '">' + u.Name + '</option>';
                         });
-                        $('#genreSelect', page).html(gHtml);
-                        $('#mapGenreSelect', page).html(gHtml);
+                        $('#userSelect', page).html(selectHtml);
 
-                        ApiClient.getUsers().then(function(users) {
-                            var selectHtml = '';
-                            users.forEach(function(u) {
-                                usersMap[u.Id] = u.Name;
-                                selectHtml += '<option value="' + u.Id + '">' + u.Name + '</option>';
-                            });
-                            $('#userSelect', page).html(selectHtml);
+                        ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                            currentPolicies = config.UserPolicies || [];        
+                            renderPolicies(page);
 
-                            ApiClient.getPluginConfiguration(pluginId).then(function (config) {
-                                currentPolicies = config.UserPolicies || [];        
-                                renderPolicies(page);
+                            currentMappings = config.GenreToTagMapList || [];
+                            renderMappings(page);
 
-                                currentMappings = config.GenreToTagMapList || [];
-                                renderMappings(page);
+                            $('#enableScheduledTagSync', page).prop('checked', config.EnableScheduledTagSync || false);
 
-                                $('#enableScheduledTagSync', page).prop('checked', config.EnableScheduledTagSync || false);
-
-                                Dashboard.hideLoadingMsg();
-                            });
+                            Dashboard.hideLoadingMsg();
+                        }).catch(function(err) {
+                            console.error(err);
+                            Dashboard.hideLoadingMsg();
                         });
+                    }).catch(function(err) {
+                        console.error(err);
+                        Dashboard.hideLoadingMsg();
                     });
                 });
 
@@ -165,10 +157,10 @@
                     e.preventDefault();
                     var page = $(this).parents('#genreRestrictionConfigPage');  
                     var userId = $('#userSelect', page).val();
-                    var genre = $('#genreSelect', page).val();
+                    var genre = $('#genreInput', page).val().trim();
 
                     if (!userId || !genre) {
-                        alert("Please select a user and a genre.");       
+                        alert("Please select a user and enter a genre.");       
                         return;
                     }
 
@@ -182,29 +174,29 @@
                         policy.BlockedGenres.push(genre);
                     }
 
-                    $('#genreSelect', page).prop('selectedIndex', 0);
+                    $('#genreInput', page).val('');
                     renderPolicies(page);
                 });
 
                 $('#addMappingBtn').on('click', function(e) {
                     e.preventDefault();
                     var page = $(this).parents('#genreRestrictionConfigPage');  
-                    var genre = $('#mapGenreSelect', page).val();
+                    var genre = $('#mapGenreInput', page).val().trim();
                     var tag = $('#mapTagInput', page).val().trim();
 
                     if (!genre || !tag) {
-                        alert("Please select a genre and enter a mapping tag.");       
+                        alert("Please enter a genre and a mapping tag.");       
                         return;
                     }
 
-                    var mapping = currentMappings.find(function(m) { return m.Genre === genre; });
+                    var mapping = currentMappings.find(function(m) { return m.Genre.toLowerCase() === genre.toLowerCase(); });
                     if (!mapping) {
                         currentMappings.push({ Genre: genre, Tag: tag });
                     } else {
                         mapping.Tag = tag;
                     }
 
-                    $('#mapGenreSelect', page).prop('selectedIndex', 0);
+                    $('#mapGenreInput', page).val('');
                     $('#mapTagInput', page).val('');
                     renderMappings(page);
                 });
