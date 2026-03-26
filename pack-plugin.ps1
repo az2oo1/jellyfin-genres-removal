@@ -31,10 +31,7 @@ Copy-Item (Join-Path $tfmOut "*.json") $stageDir -Force -ErrorAction SilentlyCon
 if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
 Compress-Archive -Path (Join-Path $stageDir "*") -DestinationPath $zipPath
 
-$hash = (Get-FileHash $zipPath -Algorithm SHA256).Hash.ToLower()
-$size = (Get-Item $zipPath).Length
-
-if ($UpdateManifest) {
+$hash = (Get-FileHash $zipPath -Algorithm MD5).Hash.ToLower()
     if (-not (Test-Path $manifestPath)) {
         throw "Manifest file not found: $manifestPath"
     }
@@ -76,6 +73,6 @@ if (Test-Path $manifestPath) {
     Write-Host "Manifest template exists at: $manifestPath"
     $manifestValidation = Get-Content $manifestPath -Raw | ConvertFrom-Json     
     $m = $manifestValidation[0].versions[0]
-    if ($m.checksum -eq "REPLACE_WITH_SHA256" -or $m.sourceUrl -like "https://YOUR_HOST/*" -or $m.sourceUrl -like "https://github.com*") {
-        Write-Warning "Manifest might still contain placeholders or non-zip URLs. Make sure sourceUrl points to the exact .zip file."      
-}
+    if ($m.checksum -eq "REPLACE_WITH_MD5" -or $m.sourceUrl -like "https://YOUR_HOST/*" -or $m.sourceUrl -like "https://github.com*") {
+        Write-Warning "Manifest might still contain placeholders or non-zip URLs. Make sure sourceUrl points to the exact .zip file."
+    }
