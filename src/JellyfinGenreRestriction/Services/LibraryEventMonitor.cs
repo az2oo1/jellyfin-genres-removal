@@ -2,14 +2,16 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using MediaBrowser.Controller.Library;
-using MediaBrowser.Controller.Entities;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using MediaBrowser.Controller.Library;
+using MediaBrowser.Controller.Entities;
+using Jellyfin.Data.Enums;
+using System.Collections.Generic;
 
 namespace JellyfinGenreRestriction.Services;
 
-public class LibraryEventMonitor : IHostedService
+public class LibraryEventMonitor : IHostedService, IDisposable
 {
     private readonly ILibraryManager _libraryManager;
     private readonly ILogger<LibraryEventMonitor> _logger;
@@ -22,35 +24,45 @@ public class LibraryEventMonitor : IHostedService
 
     public Task StartAsync(CancellationToken cancellationToken)
     {
-        _libraryManager.ItemAdded += LibraryManager_ItemAddedOrUpdated;
-        _libraryManager.ItemUpdated += LibraryManager_ItemAddedOrUpdated;       
-
+        _libraryManager.ItemAdded += OnItemAdded;
+        _libraryManager.ItemUpdated += OnItemUpdated;
+        _logger.LogInformation("Library Event Monitor started for real-time genre-tag sync.");
         return Task.CompletedTask;
     }
 
-    private async void LibraryManager_ItemAddedOrUpdated(object? sender, ItemChangeEventArgs e)
+    public Task StopAsync(CancellationToken cancellationToken)
     {
-        if (e.Item == null || e.Item.IsFolder)
-        {
-            return;
-        }
+        _libraryManager.ItemAdded -= OnItemAdded;
+        _libraryManager.ItemUpdated -= OnItemUpdated;
+        _logger.LogInformation("Library Event Monitor stopped.");
+        return Task.CompletedTask;
+    }
+
+    private void OnItemAdded(object? sender, ItemChangeEventArgs e)
+    {
+        ProcessItem(e.Item, e.UpdateReason);
+    }
+
+    private void OnItemUpdated(object? sender, ItemChangeEventArgs e)
+    {
+        ProcessItem(e.Item, e.UpdateReason);
+    }
+
+    private void ProcessItem(BaseItem? item, ItemUpdateType updateReason)
+    {
+        if (item == null || item.IsFolder) return;
+
+        // Skip metadata updates caused by this very plugin
+        if (updateReason == ItemUpdateType.MetadataEdit) return;
 
         var config = Plugin.Instance.Configuration;
-        if (!config.EnableScheduledTagSync)
-        {
-            return;
-        }
-
         var genreMap = config.GenreToTagMapList;
-        if (genreMap == null || genreMap.Count == 0)
-        {
-            return;
-        }
 
-        var item = e.Item;
-        var itemGenres = item.Genres ?? Array.Empty<string>();
-        var currentTags = item.Tags?.ToList() ?? new System.Collections.Generic.List<string>();
+        if (genreMap == null || genreMap.Count == 0) return;
+
         bool changed = false;
+        var itemGenres = item.Genres ?? Array.Empty<string>();
+        var currentTags = item.Tags != null ? item.Tags.ToList() : new List<string>();
 
         foreach (var genre in itemGenres)
         {
@@ -62,7 +74,7 @@ public class LibraryEventMonitor : IHostedService
                 {
                     currentTags.Add(targetTag);
                     changed = true;
-                    _logger.LogInformation("Added tag '{Tag}' to recently updated item '{ItemName}' because of genre '{Genre}'", targetTag, item.Name, genre);  
+                    _logger.LogInformation("Real-time: Added tag '{Tag}' to item '{ItemName}' because of genre '{Genre}'", targetTag, item.Name, genre);
                 }
             }
         }
@@ -70,22 +82,25 @@ public class LibraryEventMonitor : IHostedService
         if (changed)
         {
             item.Tags = currentTags.ToArray();
-            try
+            
+            // Fire-and-forget sync saving to prevent event handler blocking
+            _ = Task.Run(async () =>
             {
-                await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, CancellationToken.None).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed to update tags for item '{ItemName}'", item.Name);
-            }
+                try
+                {
+                    await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to update item {ItemName} after adding genre restriction tag.", item.Name);
+                }
+            });
         }
     }
 
-    public Task StopAsync(CancellationToken cancellationToken)
+    public void Dispose()
     {
-        _libraryManager.ItemAdded -= LibraryManager_ItemAddedOrUpdated;
-        _libraryManager.ItemUpdated -= LibraryManager_ItemAddedOrUpdated;       
-
-        return Task.CompletedTask;
+        _libraryManager.ItemAdded -= OnItemAdded;
+        _libraryManager.ItemUpdated -= OnItemUpdated;
     }
 }

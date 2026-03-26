@@ -7,6 +7,14 @@
     "category":  "General",
     "versions":  [
                      {
+                         "version":  "0.2.0.5",
+                         "changelog":  "Added new features.",
+                         "targetAbi":  "10.11.0.0",
+                         "sourceUrl":  "",
+                         "checksum":  "626fd438a7153a16079c2a3428ab7fac",
+                         "timestamp":  "2026-03-26T06:04:43Z"
+                     },
+                     {
                          "version":  "0.2.0.4",
                          "changelog":  "Added new features.",
                          "targetAbi":  "10.11.0.0",

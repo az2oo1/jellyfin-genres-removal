@@ -7,6 +7,7 @@ using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Entities;
 using MediaBrowser.Model.Tasks;
 using Microsoft.Extensions.Logging;
+using Jellyfin.Data.Enums;
 
 namespace JellyfinGenreRestriction.Tasks;
 
@@ -45,6 +46,7 @@ public sealed class GenreTagSyncTask : IScheduledTask
 
         var items = _libraryManager.GetItemList(new InternalItemsQuery
         {
+            IncludeItemTypes = new[] { BaseItemKind.Movie, BaseItemKind.Series, BaseItemKind.Episode, BaseItemKind.Audio, BaseItemKind.MusicVideo, BaseItemKind.Video, BaseItemKind.AudioBook, BaseItemKind.Book },
             IsFolder = false,
             Recursive = true
         });
