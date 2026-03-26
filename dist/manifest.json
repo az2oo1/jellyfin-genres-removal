@@ -1,26 +1,24 @@
-[
-  {
-    "guid": "0f7a2491-c50d-4b06-b601-a0e7d3db6b8e",
-    "name": "Genre Restriction",
-    "description": "Per-user genre-based restriction plugin scaffold for Jellyfin 10.11.6.",
-    "overview": "Adds infrastructure for per-user genre restriction policies.",
-    "owner": "abdul",
-    "category": "General",
-    "versions": [
-      {
-        "version": "0.1.0.0",
-        "changelog": "Initial release.",
-        "targetAbi": "10.11.0.0",
-        "sourceUrl": "https://github.com/az2oo1/jellyfin-genres-removal",
-        "checksum": "REPLACE_WITH_SHA256",
-        "timestamp": "2026-03-26T00:00:00Z",
-        "downloads": [
-          {
-            "url": "https://github.com/az2oo1/jellyfin-genres-removal/releases/download/v0.1.0.0/JellyfinGenreRestriction_0.1.0.0.zip",
-            "size": 0
-          }
-        ]
-      }
-    ]
-  }
-]
+﻿{
+    "guid":  "0f7a2491-c50d-4b06-b601-a0e7d3db6b8e",
+    "name":  "Genre Restriction",
+    "description":  "Per-user genre-based restriction plugin scaffold for Jellyfin 10.11.6.",
+    "overview":  "Adds infrastructure for per-user genre restriction policies.",
+    "owner":  "abdul",
+    "category":  "General",
+    "versions":  [
+                     {
+                         "version":  "0.1.0.0",
+                         "changelog":  "Initial release.",
+                         "targetAbi":  "10.11.0.0",
+                         "sourceUrl":  "https://github.com/az2oo1/jellyfin-genres-removal",
+                         "checksum":  "644a23d70389bd3af137d1f4941484a83f776a8c3601463a379d030bde3673e3",
+                         "timestamp":  "2026-03-26T04:25:29Z",
+                         "downloads":  [
+                                           {
+                                               "url":  "https://github.com/az2oo1/jellyfin-genres-removal/releases/download/v0.1.0.0/JellyfinGenreRestriction_0.1.0.0.zip",
+                                               "size":  21298
+                                           }
+                                       ]
+                     }
+                 ]
+}
