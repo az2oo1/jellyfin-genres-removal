@@ -12,6 +12,8 @@ public sealed class PluginConfiguration : BasePluginConfiguration
 
     public List<KeywordTagMapping> KeywordToTagMapList { get; set; } = new();
 
+    public List<StudioTagMapping> StudioToTagMapList { get; set; } = new();
+
     public WhitelistSettings Whitelist { get; set; } = new();
 
     public bool EnableScheduledTagSync { get; set; } = true;
@@ -36,10 +38,17 @@ public sealed class KeywordTagMapping
     public string Tag { get; set; } = string.Empty;
 }
 
+public sealed class StudioTagMapping
+{
+    public string Studio { get; set; } = string.Empty;
+    public string Tag { get; set; } = string.Empty;
+}
+
 public sealed class WhitelistSettings
 {
     public bool Enabled { get; set; } = false;
     public List<string> SafeGenres { get; set; } = new();
     public List<string> SafeKeywords { get; set; } = new();
+    public List<string> SafeStudios { get; set; } = new();
     public string RestrictedTag { get; set; } = string.Empty;
 }

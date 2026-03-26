@@ -18,7 +18,7 @@ public sealed class GenreTagSyncTask : IScheduledTask
 
     public string Name => "Parental Control: Sync Ultimate Tags";
 
-    public string Description => "Scans library and applies Advanced Keyword, Genre, and Whitelist tags for parental-control hiding.";
+    public string Description => "Scans library and applies Advanced Keyword, Genre, Studio, and Whitelist tags for parental-control hiding.";
 
     public string Category => "Library";
 
@@ -39,6 +39,7 @@ public sealed class GenreTagSyncTask : IScheduledTask
         // Fail fast if no configurations exist
         if ((config.GenreToTagMapList == null || config.GenreToTagMapList.Count == 0) &&
             (config.KeywordToTagMapList == null || config.KeywordToTagMapList.Count == 0) &&
+            (config.StudioToTagMapList == null || config.StudioToTagMapList.Count == 0) &&
             (config.Whitelist == null || !config.Whitelist.Enabled))
         {
             _logger.LogInformation("No Parental Control mappings configured. Skipping task.");

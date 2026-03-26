@@ -27,7 +27,23 @@
                         </div>
                     </div>
 
-                    <h2>2. Keyword Deep Scan Blacklist</h2>
+                    <h2>2. Studio Blacklist</h2>
+                    <p>Automatically add tags to items produced by these studios.</p>
+                    <div class="inputContainer">
+                        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 1em;">
+                            <input type="text" id="mapStudioInput" class="emby-input" placeholder="Studio (e.g. Brazzers)" style="max-width: 200px;" />
+                            <input type="text" id="mapStudioTagInput" class="emby-input" placeholder="Tag (e.g. RESTRICT_STUDIO)" style="max-width: 200px;" />
+                            <button type="button" id="addStudioMapBtn" is="emby-button" class="raised emby-button">
+                                <span>Add Studio Mapping</span>
+                            </button>
+                        </div>
+                        <div class="paperList">
+                            <ul id="studioMapList" style="list-style-type: none; padding: 0;">
+                            </ul>
+                        </div>
+                    </div>
+
+                    <h2>3. Keyword Deep Scan Blacklist</h2>
                     <p>Scans the item's Title and Overview/Description for forbidden words (case-insensitive) and adds a tag.</p>
                     <div class="inputContainer">
                         <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 1em;">
@@ -43,8 +59,9 @@
                         </div>
                     </div>
 
-                    <h2>3. Whitelist Mode</h2>
-                    <p>If enabled, any item that does NOT match your Safe Genres or Safe Keywords will automatically receive the Restricted Tag. (A blanket ban for untrusted items)</p>
+
+                    <h2>4. Whitelist Mode</h2>
+                    <p>If enabled, any item that does NOT match your Safe Genres, Safe Studios, or Safe Keywords will automatically receive the Fallback Restricted Tag.</p>
                     <div class="inputContainer" style="background: rgba(0,0,0,0.1); padding: 15px; border-radius: 5px;">
                         <label class="inputLabel" for="enableWhitelist">
                             <input type="checkbox" is="emby-checkbox" id="enableWhitelist" />
@@ -62,6 +79,14 @@
                         </div>
                         <div class="paperList" style="margin-bottom: 15px;">
                             <ul id="wlGenreList" style="list-style-type: none; padding: 0;"></ul>
+                        </div>
+
+                        <div style="margin-top: 15px; display: flex; gap: 10px; align-items: center;">
+                            <input type="text" id="wlStudioInput" class="emby-input" placeholder="Safe Studio (e.g. Disney)" style="max-width: 200px;" />
+                            <button type="button" id="addWlStudioBtn" is="emby-button" class="raised emby-button">Add Safe Studio</button>
+                        </div>
+                        <div class="paperList" style="margin-bottom: 15px;">
+                            <ul id="wlStudioList" style="list-style-type: none; padding: 0;"></ul>
                         </div>
 
                         <div style="margin-top: 15px; display: flex; gap: 10px; align-items: center;">
@@ -87,10 +112,12 @@
                 var pluginId = "0f7a2491-c50d-4b06-b601-a0e7d3db6b8e";
                 var currentMappings = [];
                 var currentKeywordMappings = [];
+                var currentStudioMappings = [];
                 var wlSettings = {
                     Enabled: false,
                     SafeGenres: [],
                     SafeKeywords: [],
+                    SafeStudios: [],
                     RestrictedTag: ""
                 };
 
@@ -118,6 +145,18 @@
                     $('#keywordMapList', $('#genreRestrictionConfigPage')).html(html);
                 }
 
+                function renderStudioMappings() {
+                    var html = '';
+                    currentStudioMappings.forEach(function(mapping, index) {
+                        html += '<li style="display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #333;">';
+                        html += '<span><strong>' + mapping.Studio + '</strong> => ' + mapping.Tag + '</span>';
+                        html += '<button type="button" is="emby-button" class="emby-button" style="color:red;" onclick="window.removeStudioMap(' + index + ')">Remove</button>';
+                        html += '</li>';
+                    });
+                    if (html === '') html = '<li>None</li>';
+                    $('#studioMapList', $('#genreRestrictionConfigPage')).html(html);
+                }
+
                 function renderWhitelist() {
                     var gHtml = '';
                     wlSettings.SafeGenres.forEach(function(g, index) {
@@ -128,6 +167,16 @@
                     });
                     if (gHtml === '') gHtml = '<li>None</li>';
                     $('#wlGenreList', $('#genreRestrictionConfigPage')).html(gHtml);
+
+                    var sHtml = '';
+                    wlSettings.SafeStudios.forEach(function(s, index) {
+                        sHtml += '<li style="display: flex; justify-content: space-between; padding: 5px; border-bottom: 1px solid #333;">';
+                        sHtml += '<span>' + s + '</span>';
+                        sHtml += '<button type="button" is="emby-button" class="emby-button" style="color:red;" onclick="window.removeWlStudio(' + index + ')">Remove</button>';
+                        sHtml += '</li>';
+                    });
+                    if (sHtml === '') sHtml = '<li>None</li>';
+                    $('#wlStudioList', $('#genreRestrictionConfigPage')).html(sHtml);
 
                     var kHtml = '';
                     wlSettings.SafeKeywords.forEach(function(k, index) {
@@ -142,8 +191,11 @@
 
                 window.removeGenreMap = function(index) { currentMappings.splice(index, 1); renderMappings(); };
                 window.removeKeywordMap = function(index) { currentKeywordMappings.splice(index, 1); renderKeywordMappings(); };
+                window.removeStudioMap = function(index) { currentStudioMappings.splice(index, 1); renderStudioMappings(); };
+                
                 window.removeWlGenre = function(index) { wlSettings.SafeGenres.splice(index, 1); renderWhitelist(); };
                 window.removeWlKeyword = function(index) { wlSettings.SafeKeywords.splice(index, 1); renderWhitelist(); };
+                window.removeWlStudio = function(index) { wlSettings.SafeStudios.splice(index, 1); renderWhitelist(); };
 
                 $('#genreRestrictionConfigPage').on('pageshow', function () {   
                     var page = this;
@@ -151,13 +203,19 @@
                     ApiClient.getPluginConfiguration(pluginId).then(function (config) {
                         currentMappings = config.GenreToTagMapList || [];   
                         currentKeywordMappings = config.KeywordToTagMapList || [];
-                        wlSettings = config.Whitelist || { Enabled: false, SafeGenres: [], SafeKeywords: [], RestrictedTag: "" };
+                        currentStudioMappings = config.StudioToTagMapList || [];
+
+                        wlSettings = config.Whitelist || { Enabled: false, SafeGenres: [], SafeKeywords: [], SafeStudios: [], RestrictedTag: "" };
                         
+                        // Ensure SafeStudios exists if older config loaded
+                        if (!wlSettings.SafeStudios) wlSettings.SafeStudios = [];
+
                         $('#enableWhitelist', page).prop('checked', wlSettings.Enabled);
                         $('#wlRestrictedTag', page).val(wlSettings.RestrictedTag || '');
 
                         renderMappings();
                         renderKeywordMappings();
+                        renderStudioMappings();
                         renderWhitelist();
 
                         Dashboard.hideLoadingMsg();
@@ -184,11 +242,31 @@
                     }
                 });
 
+                $('#addStudioMapBtn').on('click', function(e) {
+                    var studio = $('#mapStudioInput').val().trim();
+                    var tag = $('#mapStudioTagInput').val().trim();
+                    if (studio && tag) {
+                        currentStudioMappings.push({ Studio: studio, Tag: tag });       
+                        $('#mapStudioInput').val(''); $('#mapStudioTagInput').val('');
+                        renderStudioMappings();
+                    }
+                });
+
+
                 $('#addWlGenreBtn').on('click', function(e) {
                     var g = $('#wlGenreInput').val().trim();
                     if (g && wlSettings.SafeGenres.indexOf(g) === -1) {
                         wlSettings.SafeGenres.push(g);
                         $('#wlGenreInput').val('');
+                        renderWhitelist();
+                    }
+                });
+
+                $('#addWlStudioBtn').on('click', function(e) {
+                    var s = $('#wlStudioInput').val().trim();
+                    if (s && wlSettings.SafeStudios.indexOf(s) === -1) {
+                        wlSettings.SafeStudios.push(s);
+                        $('#wlStudioInput').val('');
                         renderWhitelist();
                     }
                 });
@@ -210,6 +288,7 @@
                     ApiClient.getPluginConfiguration(pluginId).then(function (config) {
                         config.GenreToTagMapList = currentMappings;
                         config.KeywordToTagMapList = currentKeywordMappings;
+                        config.StudioToTagMapList = currentStudioMappings;
                         
                         wlSettings.Enabled = $('#enableWhitelist', page).prop('checked');
                         wlSettings.RestrictedTag = $('#wlRestrictedTag', page).val().trim();

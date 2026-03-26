@@ -15,10 +15,11 @@ public static class ParentalTagger
         bool changed = false;
         var currentTags = item.Tags != null ? item.Tags.ToList() : new List<string>();
         var itemGenres = item.Genres ?? Array.Empty<string>();
+        var itemStudios = item.Studios ?? Array.Empty<string>();
         var title = item.Name ?? string.Empty;
         var overview = item.Overview ?? string.Empty;
 
-        // 1. Keyword Blacklists (Scan title and overview)
+        // 1. Keyword Blacklists
         var keywordMaps = config.KeywordToTagMapList ?? new List<KeywordTagMapping>();
         foreach (var kwMap in keywordMaps)
         {
@@ -43,17 +44,32 @@ public static class ParentalTagger
             var mapEntry = genreMaps.FirstOrDefault(kvp => string.Equals(kvp.Genre, genre, StringComparison.OrdinalIgnoreCase));
             if (mapEntry != null && !string.IsNullOrWhiteSpace(mapEntry.Tag))
             {
-                var targetTag = mapEntry.Tag;
-                if (!currentTags.Contains(targetTag, StringComparer.OrdinalIgnoreCase))
+                if (!currentTags.Contains(mapEntry.Tag, StringComparer.OrdinalIgnoreCase))
                 {
-                    currentTags.Add(targetTag);
+                    currentTags.Add(mapEntry.Tag);
                     changed = true;
-                    logger.LogInformation("ParentalControl: Added tag '{Tag}' to item '{ItemName}' due to Blacklisted Genre '{Genre}'", targetTag, title, genre);
+                    logger.LogInformation("ParentalControl: Added tag '{Tag}' to item '{ItemName}' due to Blacklisted Genre '{Genre}'", mapEntry.Tag, title, genre);
                 }
             }
         }
 
-        // 3. Whitelist Mode (If not explicitly Safe, add restricted Tag)
+        // 3. Studio Blacklists
+        var studioMaps = config.StudioToTagMapList ?? new List<StudioTagMapping>();
+        foreach (var studio in itemStudios)
+        {
+            var mapEntry = studioMaps.FirstOrDefault(kvp => string.Equals(kvp.Studio, studio, StringComparison.OrdinalIgnoreCase));
+            if (mapEntry != null && !string.IsNullOrWhiteSpace(mapEntry.Tag))
+            {
+                if (!currentTags.Contains(mapEntry.Tag, StringComparer.OrdinalIgnoreCase))
+                {
+                    currentTags.Add(mapEntry.Tag);
+                    changed = true;
+                    logger.LogInformation("ParentalControl: Added tag '{Tag}' to item '{ItemName}' due to Blacklisted Studio '{Studio}'", mapEntry.Tag, title, studio);
+                }
+            }
+        }
+
+        // 4. Whitelist Mode
         var wl = config.Whitelist;
         if (wl != null && wl.Enabled && !string.IsNullOrWhiteSpace(wl.RestrictedTag))
         {
@@ -65,7 +81,13 @@ public static class ParentalTagger
                 isSafe = true;
             }
 
-            // Check if it has a Safe Keyword in title/overview
+            // Check if it has a Safe Studio
+            if (!isSafe && wl.SafeStudios != null && wl.SafeStudios.Any(ss => itemStudios.Contains(ss, StringComparer.OrdinalIgnoreCase)))
+            {
+                isSafe = true;
+            }
+
+            // Check if it has a Safe Keyword
             if (!isSafe && wl.SafeKeywords != null && wl.SafeKeywords.Any(sk => 
                 title.Contains(sk, StringComparison.OrdinalIgnoreCase) || 
                 overview.Contains(sk, StringComparison.OrdinalIgnoreCase)))
@@ -79,7 +101,7 @@ public static class ParentalTagger
                 {
                     currentTags.Add(wl.RestrictedTag);
                     changed = true;
-                    logger.LogInformation("ParentalControl: Added Whitelist Restricted tag '{Tag}' to item '{ItemName}' because it did not match any Safe Genres or Safe Keywords.", wl.RestrictedTag, title);
+                    logger.LogInformation("ParentalControl: Added Whitelist Restricted tag '{Tag}' to item '{ItemName}' because it did not match any Safe Genres, Studios, or Keywords.", wl.RestrictedTag, title);
                 }
             }
         }
