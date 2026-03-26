@@ -34,7 +34,7 @@ public sealed class GenreTagSyncTask : IScheduledTask
         cancellationToken.ThrowIfCancellationRequested();
 
         var config = Plugin.Instance.Configuration;
-        var genreMap = config.GenreToTagMap;
+        var genreMap = config.GenreToTagMapList;
 
         if (genreMap == null || genreMap.Count == 0)
         {
@@ -69,10 +69,10 @@ public sealed class GenreTagSyncTask : IScheduledTask
 
             foreach (var genre in itemGenres)
             {
-                var mapEntry = genreMap.FirstOrDefault(kvp => string.Equals(kvp.Key, genre, StringComparison.OrdinalIgnoreCase));
-                if (mapEntry.Key != null && !string.IsNullOrWhiteSpace(mapEntry.Value))
+                var mapEntry = genreMap.FirstOrDefault(kvp => string.Equals(kvp.Genre, genre, StringComparison.OrdinalIgnoreCase));
+                if (mapEntry != null && !string.IsNullOrWhiteSpace(mapEntry.Tag))
                 {
-                    var targetTag = mapEntry.Value;
+                    var targetTag = mapEntry.Tag;
                     if (!currentTags.Contains(targetTag, StringComparer.OrdinalIgnoreCase))
                     {
                         currentTags.Add(targetTag);

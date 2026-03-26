@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Controller.Entities;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -22,8 +23,8 @@ public class LibraryEventMonitor : IHostedService
     public Task StartAsync(CancellationToken cancellationToken)
     {
         _libraryManager.ItemAdded += LibraryManager_ItemAddedOrUpdated;
-        _libraryManager.ItemUpdated += LibraryManager_ItemAddedOrUpdated;
-        
+        _libraryManager.ItemUpdated += LibraryManager_ItemAddedOrUpdated;       
+
         return Task.CompletedTask;
     }
 
@@ -40,7 +41,7 @@ public class LibraryEventMonitor : IHostedService
             return;
         }
 
-        var genreMap = config.GenreToTagMap;
+        var genreMap = config.GenreToTagMapList;
         if (genreMap == null || genreMap.Count == 0)
         {
             return;
@@ -53,15 +54,15 @@ public class LibraryEventMonitor : IHostedService
 
         foreach (var genre in itemGenres)
         {
-            var mapEntry = genreMap.FirstOrDefault(kvp => string.Equals(kvp.Key, genre, StringComparison.OrdinalIgnoreCase));
-            if (mapEntry.Key != null && !string.IsNullOrWhiteSpace(mapEntry.Value))
+            var mapEntry = genreMap.FirstOrDefault(kvp => string.Equals(kvp.Genre, genre, StringComparison.OrdinalIgnoreCase));
+            if (mapEntry != null && !string.IsNullOrWhiteSpace(mapEntry.Tag))
             {
-                var targetTag = mapEntry.Value;
+                var targetTag = mapEntry.Tag;
                 if (!currentTags.Contains(targetTag, StringComparer.OrdinalIgnoreCase))
                 {
                     currentTags.Add(targetTag);
                     changed = true;
-                    _logger.LogInformation("Added tag '{Tag}' to recently updated item '{ItemName}' because of genre '{Genre}'", targetTag, item.Name, genre);
+                    _logger.LogInformation("Added tag '{Tag}' to recently updated item '{ItemName}' because of genre '{Genre}'", targetTag, item.Name, genre);  
                 }
             }
         }
@@ -83,8 +84,8 @@ public class LibraryEventMonitor : IHostedService
     public Task StopAsync(CancellationToken cancellationToken)
     {
         _libraryManager.ItemAdded -= LibraryManager_ItemAddedOrUpdated;
-        _libraryManager.ItemUpdated -= LibraryManager_ItemAddedOrUpdated;
-        
+        _libraryManager.ItemUpdated -= LibraryManager_ItemAddedOrUpdated;       
+
         return Task.CompletedTask;
     }
 }

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("JellyfinGenreRestriction")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("0.2.0.2")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("0.2.0.2+225814e8886491746ba0a301211025a1dc90b981")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("0.2.0.2+d2991aab2f8e4df5ab195b42e5a4ea3f662e9f2e")]
 [assembly: System.Reflection.AssemblyProductAttribute("JellyfinGenreRestriction")]
 [assembly: System.Reflection.AssemblyTitleAttribute("JellyfinGenreRestriction")]
 [assembly: System.Reflection.AssemblyVersionAttribute("0.2.0.2")]

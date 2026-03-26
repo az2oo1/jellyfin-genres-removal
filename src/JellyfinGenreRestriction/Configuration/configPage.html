@@ -16,13 +16,17 @@
                         <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 1em;">
                             <select id="userSelect" is="emby-select" class="emby-select" style="max-width: 200px;">
                             </select>
-                            <input type="text" id="genreInput" class="emby-input" placeholder="e.g. Horror" style="max-width: 200px;" />
+
+                            <select id="genreSelect" is="emby-select" class="emby-select" style="max-width: 200px;">
+                                <option value="" disabled selected>Loading genres...</option>
+                            </select>
+
                             <button type="button" id="addRestrictionBtn" is="emby-button" class="raised emby-button">
                                 <span>Add Selection</span>
                             </button>
                         </div>
                     </div>
-                    
+
                     <div class="inputContainer">
                         <label class="inputLabel inputLabelUnfocused">Active Restrictions:</label>
                         <div class="paperList">
@@ -32,8 +36,20 @@
                     </div>
 
                     <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="genreToTagMap">Genre to Tag Mappings (JSON format):</label>
-                        <textarea id="genreToTagMap" name="genreToTagMap" class="emby-textarea" rows="4"></textarea>
+                        <label class="inputLabel inputLabelUnfocused">Genre to Tag Mappings</label>
+                        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 1em;">
+                            <select id="mapGenreSelect" is="emby-select" class="emby-select" style="max-width: 200px;">
+                                <option value="" disabled selected>Loading genres...</option>
+                            </select>
+                            <input type="text" id="mapTagInput" class="emby-input" placeholder="e.g. RESTRICTED_HORROR" style="max-width: 200px;" />
+                            <button type="button" id="addMappingBtn" is="emby-button" class="raised emby-button">
+                                <span>Add Mapping</span>
+                            </button>
+                        </div>
+                        <div class="paperList">
+                            <ul id="genreMapList" style="list-style-type: none; padding: 0;">
+                            </ul>
+                        </div>
                     </div>
 
                     <div class="inputContainer">
@@ -56,13 +72,14 @@
             (function() {
                 var pluginId = "0f7a2491-c50d-4b06-b601-a0e7d3db6b8e";
                 var currentPolicies = [];
+                var currentMappings = [];
                 var usersMap = {};
 
                 function renderPolicies(page) {
                     var html = '';
                     currentPolicies.forEach(function(policy, pIndex) {
                         var userName = usersMap[policy.UserId] || policy.UserId;
-                        policy.BlockedGenres.forEach(function(genre, gIndex) {
+                        policy.BlockedGenres.forEach(function(genre, gIndex) {  
                             html += '<li style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #333;">';
                             html += '<span><strong>' + userName + '</strong> - ' + genre + '</span>';
                             html += '<button type="button" is="emby-button" class="emby-button" style="color:red;" onclick="window.removeGenreRestriction(' + pIndex + ', ' + gIndex + ')">Remove</button>';
@@ -75,7 +92,21 @@
                     $('#userPoliciesList', page).html(html);
                 }
 
-                window.removeGenreRestriction = function(pIndex, gIndex) {
+                function renderMappings(page) {
+                    var html = '';
+                    currentMappings.forEach(function(mapping, index) {
+                        html += '<li style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #333;">';
+                        html += '<span><strong>' + mapping.Genre + '</strong> => ' + mapping.Tag + '</span>';
+                        html += '<button type="button" is="emby-button" class="emby-button" style="color:red;" onclick="window.removeGenreMapping(' + index + ')">Remove</button>';
+                        html += '</li>';
+                    });
+                    if (html === '') {
+                        html = '<li>No mappings configured.</li>';
+                    }
+                    $('#genreMapList', page).html(html);
+                }
+
+                window.removeGenreRestriction = function(pIndex, gIndex) {      
                     if (currentPolicies[pIndex]) {
                         currentPolicies[pIndex].BlockedGenres.splice(gIndex, 1);
                         if (currentPolicies[pIndex].BlockedGenres.length === 0) {
@@ -86,38 +117,58 @@
                     }
                 };
 
+                window.removeGenreMapping = function(index) {
+                    if (currentMappings[index]) {
+                        currentMappings.splice(index, 1);
+                        var page = $('#genreRestrictionConfigPage');
+                        renderMappings(page);
+                    }
+                };
+
                 $('#genreRestrictionConfigPage').on('pageshow', function () {   
                     var page = this;
                     Dashboard.showLoadingMsg();
 
-                    ApiClient.getUsers().then(function(users) {
-                        var selectHtml = '';
-                        users.forEach(function(u) {
-                            usersMap[u.Id] = u.Name;
-                            selectHtml += '<option value="' + u.Id + '">' + u.Name + '</option>';
+                    ApiClient.getGenres().then(function(result) {
+                        var genres = result.Items || [];
+                        var gHtml = '<option value="" disabled selected>Select a genre</option>';
+                        genres.forEach(function(g) {
+                            gHtml += '<option value="' + g.Name + '">' + g.Name + '</option>';
                         });
-                        $('#userSelect', page).html(selectHtml);
+                        $('#genreSelect', page).html(gHtml);
+                        $('#mapGenreSelect', page).html(gHtml);
 
-                        ApiClient.getPluginConfiguration(pluginId).then(function (config) {
-                            currentPolicies = config.UserPolicies || [];
-                            renderPolicies(page);
+                        ApiClient.getUsers().then(function(users) {
+                            var selectHtml = '';
+                            users.forEach(function(u) {
+                                usersMap[u.Id] = u.Name;
+                                selectHtml += '<option value="' + u.Id + '">' + u.Name + '</option>';
+                            });
+                            $('#userSelect', page).html(selectHtml);
 
-                            $('#genreToTagMap', page).val(JSON.stringify(config.GenreToTagMap || {}, null, 2));
-                            $('#enableScheduledTagSync', page).prop('checked', config.EnableScheduledTagSync || false);
+                            ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                                currentPolicies = config.UserPolicies || [];        
+                                renderPolicies(page);
 
-                            Dashboard.hideLoadingMsg();
+                                currentMappings = config.GenreToTagMapList || [];
+                                renderMappings(page);
+
+                                $('#enableScheduledTagSync', page).prop('checked', config.EnableScheduledTagSync || false);
+
+                                Dashboard.hideLoadingMsg();
+                            });
                         });
                     });
                 });
 
                 $('#addRestrictionBtn').on('click', function(e) {
                     e.preventDefault();
-                    var page = $(this).parents('#genreRestrictionConfigPage');
+                    var page = $(this).parents('#genreRestrictionConfigPage');  
                     var userId = $('#userSelect', page).val();
-                    var genre = $('#genreInput', page).val().trim();
+                    var genre = $('#genreSelect', page).val();
 
                     if (!userId || !genre) {
-                        alert("Please select a user and enter a genre.");
+                        alert("Please select a user and a genre.");       
                         return;
                     }
 
@@ -131,8 +182,31 @@
                         policy.BlockedGenres.push(genre);
                     }
 
-                    $('#genreInput', page).val('');
+                    $('#genreSelect', page).prop('selectedIndex', 0);
                     renderPolicies(page);
+                });
+
+                $('#addMappingBtn').on('click', function(e) {
+                    e.preventDefault();
+                    var page = $(this).parents('#genreRestrictionConfigPage');  
+                    var genre = $('#mapGenreSelect', page).val();
+                    var tag = $('#mapTagInput', page).val().trim();
+
+                    if (!genre || !tag) {
+                        alert("Please select a genre and enter a mapping tag.");       
+                        return;
+                    }
+
+                    var mapping = currentMappings.find(function(m) { return m.Genre === genre; });
+                    if (!mapping) {
+                        currentMappings.push({ Genre: genre, Tag: tag });
+                    } else {
+                        mapping.Tag = tag;
+                    }
+
+                    $('#mapGenreSelect', page).prop('selectedIndex', 0);
+                    $('#mapTagInput', page).val('');
+                    renderMappings(page);
                 });
 
                 $('#genreRestrictionConfigForm').on('submit', function (e) {    
@@ -141,15 +215,8 @@
                     Dashboard.showLoadingMsg();
 
                     ApiClient.getPluginConfiguration(pluginId).then(function (config) {
-                        try {
-                            config.GenreToTagMap = JSON.parse($('#genreToTagMap', page).val());
-                        } catch(err) {
-                            alert("Invalid JSON format in the Genre to Tag Mappings box. Please correct it to valid JSON and try saving again.");
-                            Dashboard.hideLoadingMsg();
-                            return;
-                        }
-
                         config.UserPolicies = currentPolicies;
+                        config.GenreToTagMapList = currentMappings;
                         config.EnableScheduledTagSync = $('#enableScheduledTagSync', page).prop('checked');
 
                         ApiClient.updatePluginConfiguration(pluginId, config).then(function (result) {
