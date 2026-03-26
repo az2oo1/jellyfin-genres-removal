@@ -1,4 +1,0 @@
-C:\Users\abdul\Documents\GitHub\jellyfin-genres-removal\src\JellyfinGenreRestriction\obj\Debug\net9.0\JellyfinGenreRestriction.csproj.AssemblyReference.cache
-C:\Users\abdul\Documents\GitHub\jellyfin-genres-removal\src\JellyfinGenreRestriction\obj\Debug\net9.0\JellyfinGenreRestriction.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\abdul\Documents\GitHub\jellyfin-genres-removal\src\JellyfinGenreRestriction\obj\Debug\net9.0\JellyfinGenreRestriction.csproj.CoreCompileInputs.cache
-C:\Users\abdul\Documents\GitHub\jellyfin-genres-removal\src\JellyfinGenreRestriction\obj\Debug\net9.0\JellyfinGenreRestriction.sourcelink.json

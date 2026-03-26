@@ -78,7 +78,7 @@ if ($UpdateManifest) {
 }
 
 Write-Host "ZIP: $zipPath"
-Write-Host "SHA256: $hash"
+Write-Host "MD5: $hash"
 Write-Host "Version: $Version"
 
 if (-not $UpdateManifest) {
