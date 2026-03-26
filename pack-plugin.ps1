@@ -1,6 +1,6 @@
 param(
     [string]$Configuration = "Release",
-    [string]$Version = "0.2.0.1",
+    [string]$Version = "0.2.0.2",
     [string]$DownloadUrl = "",
     [switch]$UpdateManifest
 )
@@ -29,7 +29,7 @@ Copy-Item (Join-Path $tfmOut "*.pdb") $stageDir -Force -ErrorAction SilentlyCont
 Copy-Item (Join-Path $tfmOut "*.json") $stageDir -Force -ErrorAction SilentlyContinue
 
 if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
-Compress-Archive -Path (Join-Path $stageDir "*") -DestinationPath $zipPath
+Compress-Archive -Path (Join-Path $stageDir "*") -DestinationPath $zipPath      
 
 $hash = (Get-FileHash $zipPath -Algorithm MD5).Hash.ToLower()
 
@@ -44,16 +44,32 @@ if ($UpdateManifest) {
     }
 
     $entry = $manifest[0]
-    if (-not $entry.versions -or $entry.versions.Count -eq 0) {
-        throw "Manifest does not contain versions entries."
+    
+    $existing = $null
+    if ($entry.versions) {
+        $existing = $entry.versions | Where-Object { $_.version -eq $Version }
+    } else {
+        $entry | Add-Member -MemberType NoteProperty -Name "versions" -Value @()
     }
 
-    $entry.versions[0].version = $Version
-    $entry.versions[0].checksum = $hash
-    $entry.versions[0].timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
-
-    if (-not [string]::IsNullOrWhiteSpace($DownloadUrl)) {
-        $entry.versions[0].sourceUrl = $DownloadUrl
+    $timestamp = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+    
+    if ($existing) {
+        $existing.checksum = $hash
+        $existing.timestamp = $timestamp
+        if (-not [string]::IsNullOrWhiteSpace($DownloadUrl)) {
+            $existing.sourceUrl = $DownloadUrl
+        }
+    } else {
+        $newVer = [PSCustomObject]@{
+            version = $Version
+            changelog = "Added new features."
+            targetAbi = "10.11.0.0"
+            sourceUrl = $DownloadUrl
+            checksum = $hash
+            timestamp = $timestamp
+        }
+        $entry.versions = @($newVer) + @($entry.versions)
     }
 
     $json = "[$($manifest | ConvertTo-Json -Depth 12)]"
@@ -63,19 +79,9 @@ if ($UpdateManifest) {
 
 Write-Host "ZIP: $zipPath"
 Write-Host "SHA256: $hash"
-Write-Host "SIZE: $size"
 Write-Host "Version: $Version"
 
 if (-not $UpdateManifest) {
     Write-Host "Update dist/manifest.json -> versions[0].checksum"
     Write-Host "Update dist/manifest.json -> versions[0].sourceUrl with your hosted ZIP URL"
-}
-
-if (Test-Path $manifestPath) {
-    Write-Host "Manifest template exists at: $manifestPath"
-    $manifestValidation = Get-Content $manifestPath -Raw | ConvertFrom-Json     
-    $m = $manifestValidation[0].versions[0]
-    if ($m.checksum -eq "REPLACE_WITH_MD5" -or $m.sourceUrl -like "https://YOUR_HOST/*") {
-        Write-Warning "Manifest might still contain placeholders or non-zip URLs. Make sure sourceUrl points to the exact .zip file."
-    }
 }

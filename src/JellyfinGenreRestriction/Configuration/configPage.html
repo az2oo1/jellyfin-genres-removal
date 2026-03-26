@@ -8,21 +8,32 @@
         <div data-role="content">
             <div class="content-primary">
                 <h1>Genre Restriction Plugin</h1>
-                <p>Use this page to map Genres to Tags. When the scheduled task runs, matching genres will automatically add the corresponding tags to your media items. You can then use Jellyfin's built-in Parental Controls to block those specific tags for any user.</p>
+                <p>Configure genre restrictions per user.</p>
                 <form id="genreRestrictionConfigForm">
+
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused">Add User Restriction</label>
+                        <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 1em;">
+                            <select id="userSelect" is="emby-select" class="emby-select" style="max-width: 200px;">
+                            </select>
+                            <input type="text" id="genreInput" class="emby-input" placeholder="e.g. Horror" style="max-width: 200px;" />
+                            <button type="button" id="addRestrictionBtn" is="emby-button" class="raised emby-button">
+                                <span>Add Selection</span>
+                            </button>
+                        </div>
+                    </div>
                     
                     <div class="inputContainer">
-                        <label class="inputLabel inputLabelUnfocused" for="genreToTagMap">Genre to Tag Mappings (JSON format):</label>
-                        <textarea id="genreToTagMap" name="genreToTagMap" class="emby-textarea" rows="10"></textarea>
-                        <div class="fieldDescription">
-                            Example:<br>
-                            <code>
-                            {<br>
-                              &nbsp;&nbsp;"Horror": "RESTRICTED_HORROR",<br>
-                              &nbsp;&nbsp;"Adult": "RESTRICTED_ADULT"<br>
-                            }
-                            </code>
+                        <label class="inputLabel inputLabelUnfocused">Active Restrictions:</label>
+                        <div class="paperList">
+                            <ul id="userPoliciesList" style="list-style-type: none; padding: 0;">
+                            </ul>
                         </div>
+                    </div>
+
+                    <div class="inputContainer">
+                        <label class="inputLabel inputLabelUnfocused" for="genreToTagMap">Genre to Tag Mappings (JSON format):</label>
+                        <textarea id="genreToTagMap" name="genreToTagMap" class="emby-textarea" rows="4"></textarea>
                     </div>
 
                     <div class="inputContainer">
@@ -30,7 +41,6 @@
                             <input type="checkbox" is="emby-checkbox" id="enableScheduledTagSync" />
                             <span>Enable Scheduled Tag Sync</span>
                         </label>
-                        <div class="fieldDescription">Turn on the scheduled task for synchronizing tags.</div>
                     </div>
 
                     <div>
@@ -45,22 +55,89 @@
         <script type="text/javascript">
             (function() {
                 var pluginId = "0f7a2491-c50d-4b06-b601-a0e7d3db6b8e";
+                var currentPolicies = [];
+                var usersMap = {};
 
-                $('#genreRestrictionConfigPage').on('pageshow', function () {
+                function renderPolicies(page) {
+                    var html = '';
+                    currentPolicies.forEach(function(policy, pIndex) {
+                        var userName = usersMap[policy.UserId] || policy.UserId;
+                        policy.BlockedGenres.forEach(function(genre, gIndex) {
+                            html += '<li style="display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #333;">';
+                            html += '<span><strong>' + userName + '</strong> - ' + genre + '</span>';
+                            html += '<button type="button" is="emby-button" class="emby-button" style="color:red;" onclick="window.removeGenreRestriction(' + pIndex + ', ' + gIndex + ')">Remove</button>';
+                            html += '</li>';
+                        });
+                    });
+                    if (html === '') {
+                        html = '<li>No restrictions configured.</li>';
+                    }
+                    $('#userPoliciesList', page).html(html);
+                }
+
+                window.removeGenreRestriction = function(pIndex, gIndex) {
+                    if (currentPolicies[pIndex]) {
+                        currentPolicies[pIndex].BlockedGenres.splice(gIndex, 1);
+                        if (currentPolicies[pIndex].BlockedGenres.length === 0) {
+                            currentPolicies.splice(pIndex, 1);
+                        }
+                        var page = $('#genreRestrictionConfigPage');
+                        renderPolicies(page);
+                    }
+                };
+
+                $('#genreRestrictionConfigPage').on('pageshow', function () {   
                     var page = this;
                     Dashboard.showLoadingMsg();
 
-                    ApiClient.getPluginConfiguration(pluginId).then(function (config) {
-                        $('#genreToTagMap', page).val(JSON.stringify(config.GenreToTagMap || {}, null, 2));
-                        $('#enableScheduledTagSync', page).prop('checked', config.EnableScheduledTagSync || false);
-                        
-                        Dashboard.hideLoadingMsg();
+                    ApiClient.getUsers().then(function(users) {
+                        var selectHtml = '';
+                        users.forEach(function(u) {
+                            usersMap[u.Id] = u.Name;
+                            selectHtml += '<option value="' + u.Id + '">' + u.Name + '</option>';
+                        });
+                        $('#userSelect', page).html(selectHtml);
+
+                        ApiClient.getPluginConfiguration(pluginId).then(function (config) {
+                            currentPolicies = config.UserPolicies || [];
+                            renderPolicies(page);
+
+                            $('#genreToTagMap', page).val(JSON.stringify(config.GenreToTagMap || {}, null, 2));
+                            $('#enableScheduledTagSync', page).prop('checked', config.EnableScheduledTagSync || false);
+
+                            Dashboard.hideLoadingMsg();
+                        });
                     });
                 });
 
-                $('#genreRestrictionConfigForm').on('submit', function (e) {
+                $('#addRestrictionBtn').on('click', function(e) {
                     e.preventDefault();
                     var page = $(this).parents('#genreRestrictionConfigPage');
+                    var userId = $('#userSelect', page).val();
+                    var genre = $('#genreInput', page).val().trim();
+
+                    if (!userId || !genre) {
+                        alert("Please select a user and enter a genre.");
+                        return;
+                    }
+
+                    var policy = currentPolicies.find(function(p) { return p.UserId === userId; });
+                    if (!policy) {
+                        policy = { UserId: userId, BlockedGenres: [] };
+                        currentPolicies.push(policy);
+                    }
+
+                    if (policy.BlockedGenres.indexOf(genre) === -1) {
+                        policy.BlockedGenres.push(genre);
+                    }
+
+                    $('#genreInput', page).val('');
+                    renderPolicies(page);
+                });
+
+                $('#genreRestrictionConfigForm').on('submit', function (e) {    
+                    e.preventDefault();
+                    var page = $(this).parents('#genreRestrictionConfigPage');  
                     Dashboard.showLoadingMsg();
 
                     ApiClient.getPluginConfiguration(pluginId).then(function (config) {
@@ -72,13 +149,14 @@
                             return;
                         }
 
+                        config.UserPolicies = currentPolicies;
                         config.EnableScheduledTagSync = $('#enableScheduledTagSync', page).prop('checked');
-                        
+
                         ApiClient.updatePluginConfiguration(pluginId, config).then(function (result) {
                             Dashboard.processPluginConfigurationUpdateResult(result);
                         });
                     });
-                    
+
                     return false;
                 });
             })();
