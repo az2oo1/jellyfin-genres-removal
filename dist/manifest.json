@@ -7,12 +7,20 @@
     "category":  "General",
     "versions":  [
                      {
+                         "version":  "0.2.0.3",
+                         "changelog":  "Added new features.",
+                         "targetAbi":  "10.11.0.0",
+                         "sourceUrl":  "https://github.com/az2oo1/jellyfin-genres-removal/releases/download/v0.2.0.3/JellyfinGenreRestriction_0.2.0.3.zip",
+                         "checksum":  "5fff2118f2bc95b4fd1a69fffce0f341",
+                         "timestamp":  "2026-03-26T05:45:49Z"
+                     },
+                     {
                          "version":  "0.2.0.2",
                          "changelog":  "Added new features.",
                          "targetAbi":  "10.11.0.0",
                          "sourceUrl":  "https://github.com/az2oo1/jellyfin-genres-removal/releases/download/v0.2.0.2/JellyfinGenreRestriction_0.2.0.2.zip",
-                         "checksum":  "5e33109d955be205d45cbae2e8e781be",
-                         "timestamp":  "2026-03-26T05:23:40Z"
+                         "checksum":  "9fbfe131f89bf7ed777346125e74a20f",
+                         "timestamp":  "2026-03-26T05:45:23Z"
                      },
                      {
                          "version":  "0.2.0.1",
